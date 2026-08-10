@@ -6,7 +6,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.core.cache import cache
-
 from .models import (
     Team,
     TeamMember,
@@ -19,10 +18,8 @@ from .models import (
     WorkflowComment,
     WorkflowAttachment,
 )
-
 from .pagination import WorkflowPagination
 from .permissions import CanManageWorkflow
-
 from .serializers import (
     TeamSerializer,
     TeamMemberSerializer,
@@ -35,6 +32,8 @@ from .serializers import (
     WorkflowCommentSerializer,
     WorkflowAttachmentSerializer,
 )
+from .tasks import workflow_background_test
+from celery.result import AsyncResult
 
 
 class HealthCheckView(APIView):
@@ -989,3 +988,49 @@ class RedisHealthCheckView(APIView):
                     },
                     status=503,
                 )
+
+class CeleryHealthCheckView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        task = workflow_background_test.delay()
+
+        return Response(
+            {
+                "status": "queued",
+                "task_id": task.id,
+            },
+            status=202,
+        )
+
+class CeleryTaskStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, task_id):
+        task = AsyncResult(task_id)
+
+        if task.successful():
+            return Response(
+                {
+                    "task_id": task_id,
+                    "status": "SUCCESS",
+                    "result": task.result,
+                }
+            )
+
+        if task.failed():
+            return Response(
+                {
+                    "task_id": task_id,
+                    "status": "FAILURE",
+                    "result": str(task.result),
+                },
+                status=500,
+            )
+
+        return Response(
+            {
+                "task_id": task_id,
+                "status": task.status,
+            }
+        )

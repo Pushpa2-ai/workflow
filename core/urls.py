@@ -3,6 +3,8 @@ from django.urls import path
 from .views import (
     HealthCheckView,
     RedisHealthCheckView,
+    CeleryHealthCheckView,
+    CeleryTaskStatusView,
 
     TeamCreateView,
     TeamListView,
@@ -48,6 +50,17 @@ urlpatterns = [
         name="redis-health-check",
     ),
 
+    path(
+        "health/celery/",
+        CeleryHealthCheckView.as_view(),
+        name="celery-health-check",
+    ),
+
+    path(
+        "health/celery/<str:task_id>/",
+        CeleryTaskStatusView.as_view(),
+        name="celery-task-status",
+    ),
     # =====================================================
     # TEAMS
     # =====================================================
