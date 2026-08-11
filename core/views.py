@@ -19,7 +19,7 @@ from .models import (
     WorkflowAttachment,
     Notification,
 )
-from .pagination import WorkflowPagination
+from .pagination import WorkflowPagination, IssuePagination
 from .permissions import CanManageWorkflow
 from .serializers import (
     TeamSerializer,
@@ -39,6 +39,9 @@ from .tasks import (
     create_notification as create_notification_task,
 )
 from celery.result import AsyncResult
+from django.db.models import Count, Q
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
 
 
 class HealthCheckView(APIView):
@@ -821,6 +824,7 @@ class WorkflowMemberRemoveView(
 class IssueListCreateView(generics.ListCreateAPIView):
     serializer_class = IssueSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = IssuePagination
 
     def get_queryset(self):
         project = Project.objects.get(
@@ -844,38 +848,54 @@ class IssueListCreateView(generics.ListCreateAPIView):
         if not can_view:
             return Issue.objects.none()
 
-        return Issue.objects.filter(
+        queryset = Issue.objects.filter(
             project=project
         )
-    
-    def list(self, request, *args, **kwargs):
-        project_id = self.kwargs["project_pk"]
 
-        cache_key = f"issues:project:{project_id}"
+        # Feature 58 — Issue Search
+        search = self.request.query_params.get("search")
 
-        cached_data = cache.get(cache_key)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search)
+                | Q(description__icontains=search)
+            )
 
-        if cached_data is not None:
-            return Response(cached_data)
+        # Feature 59 — Status Filter
+        status = self.request.query_params.get("status")
 
-        queryset = self.filter_queryset(
-            self.get_queryset()
-        )
+        if status:
+            queryset = queryset.filter(
+                status=status
+            )
 
-        serializer = self.get_serializer(
-            queryset,
-            many=True,
-        )
+        # Feature 59 — Priority Filter
+        priority = self.request.query_params.get("priority")
 
-        data = serializer.data
+        if priority:
+            queryset = queryset.filter(
+                priority=priority
+            )
 
-        cache.set(
-            cache_key,
-            data,
-            300,
-        )
+        # Feature 59 — Assignee Filter
+        assignee = self.request.query_params.get("assignee")
 
-        return Response(data)
+        if assignee:
+            queryset = queryset.filter(
+                assignee_id=assignee
+            )
+
+        # Feature 59 — Overdue Filter
+        overdue = self.request.query_params.get("overdue")
+
+        if overdue == "true":
+            queryset = queryset.filter(
+                due_date__lt=timezone.now()
+            ).exclude(
+                status="DONE"
+            )
+
+        return queryset
 
     def perform_create(self, serializer):
         project = Project.objects.get(
@@ -905,6 +925,7 @@ class IssueListCreateView(generics.ListCreateAPIView):
             project=project,
             created_by=user,
         )
+
         if issue.assignee_id:
             create_notification_task.delay(
                 recipient_id=issue.assignee_id,
@@ -1083,3 +1104,61 @@ class NotificationMarkReadView(
 
     def perform_update(self, serializer):
         serializer.save(is_read=True)
+
+class ProjectDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        project = get_object_or_404(
+            Project,
+            pk=pk,
+            members__user=request.user,
+        )
+
+        issues = Issue.objects.filter(
+            project=project
+        )
+
+        total_issues = issues.count()
+
+        todo_count = issues.filter(
+            status="TODO"
+        ).count()
+
+        in_progress_count = issues.filter(
+            status="IN_PROGRESS"
+        ).count()
+
+        done_count = issues.filter(
+            status="DONE"
+        ).count()
+
+        high_priority_count = issues.filter(
+            priority__in=["HIGH", "CRITICAL"]
+        ).count()
+
+        overdue_count = issues.filter(
+            due_date__lt=timezone.now()
+        ).exclude(
+            status="DONE"
+        ).count()
+
+        completed_percentage = (
+            round((done_count / total_issues) * 100, 2)
+            if total_issues
+            else 0
+        )
+
+        return Response(
+            {
+                "project_id": project.id,
+                "project_name": project.name,
+                "total_issues": total_issues,
+                "todo": todo_count,
+                "in_progress": in_progress_count,
+                "done": done_count,
+                "high_priority": high_priority_count,
+                "overdue": overdue_count,
+                "completed_percentage": completed_percentage,
+            }
+        )
