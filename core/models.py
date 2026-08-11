@@ -345,3 +345,48 @@ class WorkflowAttachment(models.Model):
 
     def __str__(self):
         return f"{self.workflow.name} - {self.file_name}"
+    
+class Notification(models.Model):
+    class NotificationType(models.TextChoices):
+        ISSUE_ASSIGNED = "ISSUE_ASSIGNED", "Issue Assigned"
+        ISSUE_UPDATED = "ISSUE_UPDATED", "Issue Updated"
+        ISSUE_COMMENTED = "ISSUE_COMMENTED", "Issue Commented"
+        PROJECT_ADDED = "PROJECT_ADDED", "Project Added"
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+
+    notification_type = models.CharField(
+        max_length=50,
+        choices=NotificationType.choices,
+    )
+
+    title = models.CharField(max_length=200)
+
+    message = models.TextField()
+
+    related_issue = models.ForeignKey(
+        "Issue",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="notifications",
+    )
+
+    is_read = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return (
+            f"{self.recipient.username} - "
+            f"{self.title}"
+        )

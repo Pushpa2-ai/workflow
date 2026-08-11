@@ -12,6 +12,7 @@ from .models import (
     WorkflowMember,
     WorkflowComment,
     WorkflowAttachment,
+    Notification,
 )
 
 
@@ -513,3 +514,33 @@ class WorkflowSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+class NotificationSerializer(
+    serializers.ModelSerializer
+):
+    recipient = serializers.ReadOnlyField(
+        source="recipient.username"
+    )
+
+    class Meta:
+        model = Notification
+        fields = (
+            "id",
+            "recipient",
+            "notification_type",
+            "title",
+            "message",
+            "related_issue",
+            "is_read",
+            "created_at",
+        )
+
+        read_only_fields = (
+            "id",
+            "recipient",
+            "notification_type",
+            "title",
+            "message",
+            "related_issue",
+            "created_at",
+        )

@@ -17,6 +17,7 @@ from .models import (
     WorkflowMember,
     WorkflowComment,
     WorkflowAttachment,
+    Notification,
 )
 from .pagination import WorkflowPagination
 from .permissions import CanManageWorkflow
@@ -31,8 +32,12 @@ from .serializers import (
     WorkflowSerializer,
     WorkflowCommentSerializer,
     WorkflowAttachmentSerializer,
+    NotificationSerializer,
 )
-from .tasks import workflow_background_test
+from .tasks import (
+    workflow_background_test,
+    create_notification as create_notification_task,
+)
 from celery.result import AsyncResult
 
 
@@ -896,10 +901,23 @@ class IssueListCreateView(generics.ListCreateAPIView):
                 "You do not have access to this project."
             )
 
-        serializer.save(
+        issue = serializer.save(
             project=project,
             created_by=user,
         )
+        if issue.assignee_id:
+            create_notification_task.delay(
+                recipient_id=issue.assignee_id,
+                notification_type=(
+                    Notification.NotificationType.ISSUE_ASSIGNED
+                ),
+                title="New issue assigned",
+                message=(
+                    f"You have been assigned the issue "
+                    f"'{issue.title}'."
+                ),
+                issue_id=issue.id,
+            )
 
         cache.clear()
 
@@ -1034,3 +1052,34 @@ class CeleryTaskStatusView(APIView):
                 "status": task.status,
             }
         )
+
+class NotificationListView(
+    generics.ListAPIView
+):
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(
+            recipient=self.request.user
+        )
+
+class NotificationMarkReadView(
+    generics.UpdateAPIView
+):
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    http_method_names = [
+        "patch",
+        "head",
+        "options",
+    ]
+
+    def get_queryset(self):
+        return Notification.objects.filter(
+            recipient=self.request.user
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(is_read=True)

@@ -34,6 +34,9 @@ from .views import (
     WorkflowMemberAddView,
     WorkflowMemberListView,
     WorkflowMemberRemoveView,
+
+    NotificationListView,
+    NotificationMarkReadView,
 )
 
 
@@ -221,5 +224,17 @@ urlpatterns = [
         "workflows/<int:workflow_pk>/attachments/<int:pk>/",
         WorkflowAttachmentDetailView.as_view(),
         name="workflow-attachment-detail",
+    ),
+
+    path(
+        "notifications/",
+        NotificationListView.as_view(),
+        name="notification-list",
+    ),
+
+    path(
+        "notifications/<int:pk>/read/",
+        NotificationMarkReadView.as_view(),
+        name="notification-mark-read",
     ),
 ]
