@@ -1,0 +1,18 @@
+from rest_framework.views import exception_handler
+
+
+def custom_exception_handler(exc, context):
+    response = exception_handler(exc, context)
+
+    if response is None:
+        return response
+
+    error_data = {
+        "status": "error",
+        "code": response.status_code,
+        "errors": response.data,
+    }
+
+    response.data = error_data
+
+    return response
