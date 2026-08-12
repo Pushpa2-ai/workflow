@@ -50,8 +50,21 @@ class TeamMember(models.Model):
 
 
 class Project(models.Model):
+
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Active"
+        COMPLETED = "COMPLETED", "Completed"
+        ARCHIVED = "ARCHIVED", "Archived"
+
     name = models.CharField(max_length=150)
+
     description = models.TextField(blank=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
 
     team = models.ForeignKey(
         Team,
@@ -66,6 +79,7 @@ class Project(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

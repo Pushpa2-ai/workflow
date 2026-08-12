@@ -112,6 +112,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
+            "status",
             "team",
             "team_name",
             "owner",
