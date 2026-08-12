@@ -32,3 +32,5 @@ Thumbs.db
 
 backups/*.sql
 backups/*.dump
+
+workflow_backup.sql
