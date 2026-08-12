@@ -160,6 +160,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5174",
     "http://127.0.0.1:5174",
     "http://localhost",
+    "https://workflow-amber-three.vercel.app",
 ]
 
 SIMPLE_JWT = {
