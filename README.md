@@ -45,16 +45,19 @@
 
 | Resource | Status |
 |---|---|
-| Frontend | Vercel — planned |
-| Backend API | Render — planned |
-| PostgreSQL | Production service — planned |
-| Redis | Production service — planned |
-| Celery Worker | Production worker — planned |
-| Local Docker Environment | ✅ Working |
+| Frontend | ✅ Deployed on Vercel |
+| Backend API | ✅ Deployed on Render |
+| PostgreSQL | ✅ Production database on Render |
+| Redis | ✅ Configured on Render |
+| Celery Worker | ⏭️ Not deployed (requires paid Render Background Worker) |
+| Docker | ✅ Configured and working |
+| Production Security | ✅ Configured |
+| Static Files | ⚠️ DRF static assets not served; API functionality unaffected |
 
-Production URLs will be added after deployment.
+### Production URLs
 
----
+- **Frontend:** https://workflow-amber-three.vercel.app
+- **Backend API:** https://workflow-backend-2e74.onrender.com
 
 # 📖 Overview
 
@@ -972,10 +975,10 @@ Workflow is containerized using Docker Compose.
 ┌───────────────────────────────────────────────────┐
 │                 Docker Compose                    │
 │                                                   │
-│  ┌──────────────┐       ┌─────────────────────┐  │
-│  │   frontend   │──────►│      backend        │  │
-│  │ React/Nginx  │       │ Django/Gunicorn     │  │
-│  └──────────────┘       └──────────┬──────────┘  │
+│  ┌──────────────┐       ┌─────────────────────┐   │
+│  │   frontend   │──────►│      backend        │   │
+│  │ React/Nginx  │       │ Django/Gunicorn     │   │
+│  └──────────────┘       └──────────┬──────────┘   │
 │                                    │              │
 │                     ┌──────────────┼──────────┐   │
 │                     ▼              ▼          ▼   │
@@ -1127,6 +1130,9 @@ Workflow/
 ├── accounts/
 │
 ├── core/
+    ├── management
+    ├── migrations
+    ├── tests
 │   ├── models.py
 │   ├── views.py
 │   ├── serializers.py
@@ -1623,24 +1629,32 @@ backups/*.dump
 
 ---
 
-# 🛣️ Roadmap
+## 🛣️ Project Status
 
-- [ ] Deploy frontend to Vercel
-- [ ] Deploy backend to Render
-- [ ] Configure production PostgreSQL
-- [ ] Configure production Redis
-- [ ] Deploy Celery worker
-- [ ] Configure production HTTPS
-- [ ] Configure production CORS
-- [ ] Complete HTTPS security hardening
-- [ ] Add CI/CD pipeline
-- [ ] Expand automated test coverage
-- [ ] Add API documentation
-- [ ] Add production monitoring
-- [ ] Add centralized error tracking
-- [ ] Improve observability
-- [ ] Optimize application performance
-- [ ] Evaluate real-time updates
+### ✅ Completed
+
+- Frontend deployed on Vercel
+- Backend deployed on Render
+- Production PostgreSQL configured
+- Redis configured
+- Production CORS and security settings configured
+- Dockerized backend
+- JWT authentication
+- Role-based access control
+- Projects and teams management
+- Issues and notifications
+- Celery task architecture implemented locally
+- Automated database migrations during deployment
+
+### 🔄 Future Enhancements
+
+- GitHub Actions CI/CD pipeline
+- Production Celery worker
+- Advanced monitoring and error tracking
+- Expanded automated test coverage
+- API documentation
+- Real-time updates
+- Performance optimization
 
 ---
 
