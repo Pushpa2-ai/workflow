@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "backend", "workflow-backend-2e74.onrender.com",]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "workflow-backend-2e74.onrender.com",]
 
 
 # Application definition
@@ -162,6 +162,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost",
     "https://workflow-amber-three.vercel.app",
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://workflow-amber-three.vercel.app",
+]
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = "DENY"
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
