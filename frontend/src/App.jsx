@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 
 import { apiRequest } from "./services/api";
@@ -21,6 +22,50 @@ import IssueDetails from "./pages/IssueDetails";
 import TeamDetails from "./pages/TeamDetails";
 import Workflows from "./pages/Workflows";
 import WorkflowDetails from "./pages/WorkflowDetails";
+
+function DemoEntry() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const loginAsDemo = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api"}/auth/demo-login/`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Demo login failed");
+        }
+
+        const data = await response.json();
+
+        localStorage.setItem("access", data.access);
+        localStorage.setItem("refresh", data.refresh);
+
+        navigate("/dashboard", { replace: true });
+      } catch (error) {
+        console.error("Demo login failed:", error);
+        navigate("/login", { replace: true });
+      }
+    };
+
+    loginAsDemo();
+  }, [navigate]);
+
+  return (
+    <main className="flex min-h-screen items-center justify-center">
+      <p className="text-gray-500">
+        Loading Workflow...
+      </p>
+    </main>
+  );
+}
 
 function Home() {
   const [status, setStatus] = useState(
@@ -62,7 +107,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<DemoEntry />} />
 
         <Route path="/login" element={<Login />} />
 

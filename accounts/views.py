@@ -3,6 +3,7 @@ from rest_framework import generics, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 from .permissions import IsAdmin
 from .serializers import (
     UserRegistrationSerializer,
@@ -17,6 +18,31 @@ User = get_user_model()
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
+
+class DemoLoginView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        try:
+            user = User.objects.get(
+                username="demo",
+                is_active=True,
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "Demo user is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
